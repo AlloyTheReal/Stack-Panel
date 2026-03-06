@@ -1,6 +1,6 @@
 # Stack Panel 🎮
 
-**Sortie récente **  
+**Sortie récente**  
 Stack Panel est un gestionnaire de serveurs **Minecraft** simple et efficace. Gérez vos serveurs facilement, lancez-les, arrêtez-les et depuis une interface intuitive et simplifiée.
 
 ## 📝 Fonctionnalités
