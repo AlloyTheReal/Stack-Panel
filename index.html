@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stackpanel - Minecraft Server Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/png" href="icone.png">
+</head>
+
+<body>
+    <div id="drag-region"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-layer-group"></i>
+                <h1>Stack Panel</h1>
+            </div>
+            <nav>
+                <button class="nav-btn active" id="nav-dashboard">
+                    <i class="fas fa-list"></i>
+                    <span>Serveurs</span>
+                </button>
+                <button class="nav-btn" id="nav-create">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Nouveau</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Dashboard View -->
+            <section id="view-dashboard" class="view active-view">
+                <header>
+                    <h2><i class="fas fa-server"></i> Mes Serveurs</h2>
+                </header>
+                <div class="server-grid" id="server-list">
+                    <!-- Servers will be injected here -->
+                    <div class="empty-state">
+                        <i class="fas fa-ghost"></i>
+                        <p>Aucun serveur configuré.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Create View (Multi-step Questionnaire) -->
+            <section id="view-create" class="view">
+                <header>
+                    <div class="wizard-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="wizard-progress-fill"></div>
+                        </div>
+                        <div class="steps-info">Étape <span id="step-count">1</span> sur 3</div>
+                    </div>
+                    <h2 id="wizard-title"><i class="fas fa-magic"></i> Nouveau Serveur</h2>
+                </header>
+
+                <div id="wizard-container" class="wizard-container">
+                    <!-- Step 1: Name -->
+                    <div class="wizard-step active" data-step="1">
+                        <div class="step-content">
+                            <label><i class="fas fa-tag"></i> Comment s'appelle votre serveur ?</label>
+                            <input type="text" id="wiz-name" placeholder="ex: Terre du Milieu" class="wiz-input-large">
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Loader -->
+                    <div class="wizard-step" data-step="2">
+                        <label><i class="fas fa-microchip"></i> Quel type de serveur ?</label>
+                        <div class="selection-grid" id="loader-grid">
+                            <button class="grid-item" data-value="vanilla">
+                                <i class="fas fa-cube"></i>
+                                <span>Vanilla</span>
+                            </button>
+                            <button class="grid-item" data-value="paper">
+                                <i class="fas fa-scroll"></i>
+                                <span>Paper</span>
+                            </button>
+                            <button class="grid-item" data-value="fabric">
+                                <i class="fas fa-feather-alt"></i>
+                                <span>Fabric</span>
+                            </button>
+                            <button class="grid-item" data-value="forge">
+                                <i class="fas fa-hammer"></i>
+                                <span>Forge</span>
+                            </button>
+                            <button class="grid-item" data-value="neoforge">
+                                <i class="fas fa-fire"></i>
+                                <span>NeoForge</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Version -->
+                    <div class="wizard-step" data-step="3">
+                        <label><i class="fas fa-code-branch"></i> Choisissez la version</label>
+                        <div id="version-categories" class="selection-grid categories">
+                            <!-- Categories like 1.21, 1.20, etc. -->
+                        </div>
+                        <div id="sub-versions" class="selection-grid sub-versions"
+                            style="margin-top: 20px; display: none;">
+                            <!-- Sub-versions like 1.21.4, 1.21.1, etc. -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wizard-nav">
+                    <button class="btn-secondary" id="btn-wiz-back" style="visibility: hidden;">
+                        <i class="fas fa-arrow-left"></i> Retour
+                    </button>
+                    <button class="btn-primary" id="btn-wiz-next">
+                        Suivant <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div id="create-status" class="status-overlay" style="display: none;">
+                    <div class="spinner"></div>
+                    <div id="status-text">Création en cours...</div>
+                </div>
+            </section>
+
+            <!-- Server Detail View -->
+            <section id="view-server" class="view">
+                <div class="server-header">
+                    <button class="btn-icon" id="btn-back" title="Retour">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 id="detail-name">Nom du Serveur</h2>
+                    <div class="server-actions">
+                        <button class="btn-primary" id="btn-start-stop">
+                            <i class="fas fa-play"></i> <span>Démarrer</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="server-info-bar">
+                    <span class="badge" id="detail-status">Hors Ligne</span>
+                    <span class="info-item"><i class="fas fa-plug"></i> <strong id="detail-port">-</strong></span>
+                    <span class="info-item"><i class="fas fa-fingerprint"></i> <strong id="detail-pid">-</strong></span>
+                    <span class="info-item"><i class="fas fa-cube"></i> <strong id="detail-loader">-</strong></span>
+                    <span class="info-item"><i class="fas fa-code-branch"></i> <strong
+                            id="detail-version">-</strong></span>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="server-tabs">
+                    <button class="tab-btn active" data-tab="console"><i class="fas fa-terminal"></i> Console</button>
+                    <button class="tab-btn" data-tab="files"><i class="fas fa-folder-tree"></i> Fichiers</button>
+                    <button class="tab-btn" data-tab="backups"><i class="fas fa-archive"></i> Backups</button>
+                    <button class="tab-btn" data-tab="settings"><i class="fas fa-cog"></i> Paramètres</button>
+                </div>
+
+                <!-- Tabs Content -->
+                <div class="tab-content-container">
+                    <!-- Console Tab -->
+                    <div class="tab-pane active" id="tab-console">
+                        <div class="server-workspace">
+                            <div class="console-container">
+                                <div class="console-output" id="console-output"></div>
+                                <div class="console-input-wrapper">
+                                    <i class="fas fa-chevron-right"></i>
+                                    <input type="text" id="console-input" class="console-input"
+                                        placeholder="Taper une commande...">
+                                </div>
+                            </div>
+                            <div class="players-container">
+                                <h3><i class="fas fa-users"></i> Joueurs (<span id="player-count">0</span>)</h3>
+                                <ul id="player-list" class="player-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Files Tab -->
+                    <div class="tab-pane" id="tab-files">
+                        <div class="file-manager">
+                            <div class="fm-toolbar">
+                                <div class="fm-path"><i class="fas fa-folder-open"></i> <span
+                                        id="fm-current-path">/</span></div>
+                                <button class="btn-secondary" id="btn-open-folder" title="Ouvrir le dossier">
+                                    <i class="fas fa-folder-open"></i>
+                                </button>
+                                <button class="btn-secondary btn-sm" id="btn-fm-back"><i
+                                        class="fas fa-level-up-alt"></i></button>
+                            </div>
+                            <div class="file-grid" id="file-list">
+                                <!-- Files injected here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backups Tab -->
+                    <div class="tab-pane" id="tab-backups">
+                        <div class="backups-container">
+                            <div class="backups-toolbar">
+                                <button class="btn btn-accent" id="btn-create-backup">
+                                    <i class="fas fa-plus"></i> Créer une sauvegarde
+                                </button>
+                                <div class="backups-info">
+                                    Les sauvegardes sont stockées dans le dossier <code>backups</code> du serveur.
+                                </div>
+                            </div>
+                            <div class="backups-list" id="backups-list">
+                                <!-- Backups will be listed here -->
+                                <div class="empty-state">
+                                    <i class="fas fa-archive"></i>
+                                    <p>Aucune sauvegarde trouvée.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div class="tab-pane" id="tab-settings">
+                        <div class="settings-container">
+                            <h3>Propriétés du serveur</h3>
+                            <div class="settings-form">
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <span>Mode Hors Ligne (Crack)</span>
+                                        <small>online-mode</small>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="set-offline-mode">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <span>Port du serveur</span>
+                                        <small>server-port</small>
+                                    </div>
+                                    <input type="number" id="set-port" class="small-input">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <span>Joueurs Max</span>
+                                        <small>max-players</small>
+                                    </div>
+                                    <input type="number" id="set-max-players" class="small-input">
+                                </div>
+                                <div class="setting-item full">
+                                    <div class="setting-info">
+                                        <span>Description (MOTD)</span>
+                                        <small>motd</small>
+                                    </div>
+                                    <input type="text" id="set-motd" class="full-input">
+                                </div>
+                            </div>
+                            <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                                <button class="btn-primary" id="btn-save-settings"><i class="fas fa-save"></i>
+                                    Enregistrer</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </main>
+    </div>
+
+    <!-- File Editor Modal -->
+    <div id="editor-modal" class="modal-overlay" style="display: none;">
+        <div class="editor-container">
+            <div class="editor-header">
+                <div class="editor-info">
+                    <i class="fas fa-file-code"></i>
+                    <span id="editor-filename">filename.txt</span>
+                </div>
+                <div class="editor-actions">
+                    <button class="btn-secondary btn-sm" id="btn-editor-cancel">Annuler</button>
+                    <button class="btn-primary btn-sm" id="btn-editor-save"><i class="fas fa-save"></i>
+                        Enregistrer</button>
+                </div>
+            </div>
+            <textarea id="editor-textarea" spellcheck="false"></textarea>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>
