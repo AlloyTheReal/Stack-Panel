@@ -4,7 +4,6 @@ const { spawn } = require('child_process');
 const { app } = require('electron');
 const api = require('./api');
 const javaManager = require('./javaManager');
-const net = require('net');
 
 // Use userData when packaged (asar is read-only), dev path otherwise
 function getDataRoot() {
@@ -84,17 +83,6 @@ class ServerManager {
         return this.servers.find(s => s.id === id);
     }
 
-    async findAvailablePort(startPort = 25565) {
-        return new Promise((resolve) => {
-            const server = net.createServer();
-            server.unref();
-            server.on('error', () => { setTimeout(() => resolve(this.findAvailablePort(startPort + 1)), 0); });
-            server.listen(startPort, () => {
-                const port = server.address().port;
-                server.close(() => resolve(port));
-            });
-        });
-    }
 
     async createServer(name, loader, version, settings = {}, onProgress) {
         const id = Date.now().toString();
@@ -137,8 +125,17 @@ class ServerManager {
         } else if (loader.toLowerCase() === 'neoforge') {
             dlUrl = await api.getNeoForgeUrl(version);
             isInstaller = true;
+        } else if (loader.toLowerCase() === 'spigot') {
+            dlUrl = await api.getSpigotUrl(version);
+        } else if (loader.toLowerCase() === 'purpur') {
+            dlUrl = await api.getPurpurUrl(version);
         } else {
-            throw new Error(`Loader ${loader} non supporté.`);
+            // Try generic mcserverjars fetch for any other loader
+            try {
+                dlUrl = await api.getLatestBuildUrl(loader.toLowerCase(), version);
+            } catch (err) {
+                throw new Error(`Loader ${loader} non supporté ou introuvable.`);
+            }
         }
 
         let mainJar = 'server.jar';
@@ -196,7 +193,7 @@ class ServerManager {
             loader,
             version,
             path: serverDir,
-            port: null, // assigned at first start
+            port: settings.port || 25565,
             jar: mainJar,
             javaExe: javaExe
         };
@@ -212,13 +209,6 @@ class ServerManager {
         if (!server) throw new Error('Server not found');
         if (this.processes[id]) throw new Error('Server already running');
 
-        // Pick an available port and write server.properties ONLY IF not already set
-        if (!server.port) {
-            const port = await this.findAvailablePort();
-            server.port = port;
-            fs.writeFileSync(path.join(server.path, 'server.properties'), `server-port=${port}\nonline-mode=false\n`);
-            this.saveServers();
-        }
 
         const javaExe = server.javaExe || 'java'; // Fallback to global java
         let cmd = javaExe;

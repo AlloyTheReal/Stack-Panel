@@ -20,6 +20,59 @@ function switchView(viewId) {
     if (navItem) navItem.classList.add('active');
 }
 
+// --- Notification System ---
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+
+    toast.innerHTML = `
+        <i class="fas ${icons[type] || icons.info}"></i>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        toast.style.transition = '0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+function showConfirm(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const titleEl = document.getElementById('confirm-title');
+        const messageEl = document.getElementById('confirm-message');
+        const btnOk = document.getElementById('btn-confirm-ok');
+        const btnCancel = document.getElementById('btn-confirm-cancel');
+
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        modal.style.display = 'flex';
+
+        const cleanup = (result) => {
+            modal.style.display = 'none';
+            btnOk.onclick = null;
+            btnCancel.onclick = null;
+            resolve(result);
+        };
+
+        btnOk.onclick = () => cleanup(true);
+        btnCancel.onclick = () => cleanup(false);
+        modal.onclick = (e) => { if (e.target === modal) cleanup(false); };
+    });
+}
+
 // Load Servers list
 async function loadServers() {
     allServers = await window.api.getServers();
@@ -77,20 +130,57 @@ class WizardManager {
 
     init() {
         this.setupEventListeners();
-        this.renderVersionCategories();
+        this.loadLoaders();
+    }
+
+    async loadLoaders() {
+        try {
+            const projects = await window.api.getProjects();
+            const grid = document.getElementById('loader-grid');
+
+            // Map mcserverjars IDs to FontAwesome icons (best effort)
+            const iconMap = {
+                'paper': 'fa-scroll',
+                'spigot': 'fa-plug',
+                'vanilla': 'fa-cube',
+                'purpur': 'fa-ghost',
+                'fabric': 'fa-feather-alt',
+                'forge': 'fa-hammer',
+                'neoforge': 'fa-fire',
+                'bukkit': 'fa-book-open',
+                'velocity': 'fa-bolt',
+                'bungeecord': 'fa-link',
+                'waterfall': 'fa-water'
+            };
+
+            grid.innerHTML = projects.map(p => {
+                const slug = p.slug.toLowerCase();
+                return `
+                    <button class="grid-item" data-value="${p.slug}">
+                        <i class="fas ${iconMap[slug] || 'fa-cubes'}"></i>
+                        <span>${p.name}</span>
+                    </button>
+                `;
+            }).join('');
+
+            grid.querySelectorAll('.grid-item').forEach(btn => {
+                btn.onclick = () => {
+                    grid.querySelectorAll('.grid-item').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    this.data.loader = btn.dataset.value;
+                    this.data.version = ''; // Reset version on loader change
+                    document.getElementById('sub-versions').style.display = 'none';
+                    this.renderVersionCategories(); // Fetch versions for this loader
+                };
+            });
+        } catch (err) {
+            console.error("Failed to load loaders:", err);
+        }
     }
 
     setupEventListeners() {
         document.getElementById('btn-wiz-next').onclick = () => this.nextStep();
         document.getElementById('btn-wiz-back').onclick = () => this.prevStep();
-
-        document.querySelectorAll('#loader-grid .grid-item').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('#loader-grid .grid-item').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                this.data.loader = btn.dataset.value;
-            };
-        });
 
         document.getElementById('wiz-name').oninput = (e) => {
             this.data.name = e.target.value;
@@ -121,9 +211,9 @@ class WizardManager {
     }
 
     async nextStep() {
-        if (this.currentStep === 1 && !this.data.name.trim()) return alert("Veuillez donner un nom à votre serveur.");
-        if (this.currentStep === 2 && !this.data.loader) return alert("Veuillez choisir un loader.");
-        if (this.currentStep === 3 && !this.data.version) return alert("Veuillez choisir une version.");
+        if (this.currentStep === 1 && !this.data.name.trim()) return showToast("Veuillez donner un nom à votre serveur.", "warning");
+        if (this.currentStep === 2 && !this.data.loader) return showToast("Veuillez choisir un loader.", "warning");
+        if (this.currentStep === 3 && !this.data.version) return showToast("Veuillez choisir une version.", "warning");
 
         if (this.currentStep < this.totalSteps) {
             this.currentStep++;
@@ -140,36 +230,44 @@ class WizardManager {
         }
     }
 
-    renderVersionCategories() {
-        const categories = ["1.21", "1.20", "1.19", "1.18", "1.17", "1.16", "1.12", "1.8", "1.7"];
-        const grid = document.getElementById('version-categories');
-        grid.innerHTML = categories.map(cat => `
-            <button class="grid-item cat-btn" data-cat="${cat}">${cat}</button>
-        `).join('');
+    async renderVersionCategories() {
+        if (!this.data.loader) return;
 
-        grid.querySelectorAll('.cat-btn').forEach(btn => {
-            btn.onclick = () => {
-                grid.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                this.renderSubVersions(btn.dataset.cat);
-            };
-        });
+        const grid = document.getElementById('version-categories');
+        grid.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Chargement des versions...</div>';
+
+        try {
+            const versions = await window.api.getAvailableVersions(this.data.loader);
+            this.allVersions = versions; // Cache all versions for this loader
+
+            // Group versions by major (e.g. 1.21.x -> 1.21)
+            const categories = [...new Set(versions.map(v => {
+                const parts = v.split('.');
+                return parts.length >= 2 ? `${parts[0]}.${parts[1]}` : v;
+            }))].slice(0, 15); // Show top 15 major versions
+
+            grid.innerHTML = categories.map(cat => `
+                <button class="grid-item cat-btn" data-cat="${cat}">${cat}</button>
+            `).join('');
+
+            grid.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.onclick = () => {
+                    grid.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    this.renderSubVersions(btn.dataset.cat);
+                };
+            });
+        } catch (err) {
+            grid.innerHTML = '<div class="error-state">Erreur lors du chargement des versions.</div>';
+            console.error(err);
+        }
     }
 
     renderSubVersions(cat) {
-        const subMap = {
-            "1.21": ["1.21.4", "1.21.3", "1.21.1", "1.21"],
-            "1.20": ["1.20.6", "1.20.4", "1.20.2", "1.20.1", "1.20"],
-            "1.19": ["1.19.4", "1.19.2", "1.19.1", "1.19"],
-            "1.18": ["1.18.2", "1.18.1", "1.18"],
-            "1.17": ["1.17.1", "1.17"],
-            "1.16": ["1.16.5", "1.16.4", "1.16.3", "1.16.1"],
-            "1.12": ["1.12.2", "1.12.1", "1.12"],
-            "1.8": ["1.8.9", "1.8.8", "1.8"],
-            "1.7": ["1.7.10", "1.7.2"]
-        };
+        if (!this.allVersions) return;
 
-        const list = subMap[cat] || [];
+        // Filter versions that start with the category prefix (e.g. 1.21 matches 1.21.4, 1.21.1, 1.21)
+        const list = this.allVersions.filter(v => v === cat || v.startsWith(cat + '.'));
         const grid = document.getElementById('sub-versions');
         grid.style.display = 'grid';
         grid.innerHTML = list.map(v => `
@@ -207,7 +305,7 @@ class WizardManager {
             loadServers();
             switchView('dashboard');
         } catch (err) {
-            alert("Erreur: " + err.message);
+            showToast("Erreur: " + err.message, "error");
         } finally {
             overlay.style.display = 'none';
         }
@@ -320,11 +418,11 @@ document.getElementById('btn-save-settings').onclick = async () => {
 
     try {
         await window.api.saveServerSettings(currentServerId, settings);
-        alert("Paramètres enregistrés !");
+        showToast("Paramètres enregistrés !", "success");
         loadServers(); // Refresh port in UI
         updateServerView();
     } catch (err) {
-        alert("Erreur lors de l'enregistrement : " + err.message);
+        showToast("Erreur lors de l'enregistrement : " + err.message, "error");
     }
 };
 
@@ -399,7 +497,7 @@ function updateServerView() {
         btnStart.style.boxShadow = '0 8px 20px -5px var(--accent-glow)';
         btnStart.onclick = async () => {
             const success = await window.api.startServer(server.id);
-            if (!success) alert("Impossible de démarrer le serveur");
+            if (!success) showToast("Impossible de démarrer le serveur", "error");
             // refresh display
             setTimeout(() => {
                 window.api.getServers().then(servers => {
@@ -416,12 +514,14 @@ function updateServerView() {
 }
 
 async function deleteServer(id, name) {
-    if (!confirm(`Supprimer le serveur "${name}" ? Cette action est irréversible, tous les fichiers seront supprimés.`)) return;
+    const confirmed = await showConfirm("Supprimer le serveur", `Supprimer le serveur "${name}" ? Cette action est irréversible, tous les fichiers seront supprimés.`);
+    if (!confirmed) return;
     try {
         await window.api.deleteServer(id);
+        showToast("Serveur supprimé", "success");
         loadServers();
     } catch (err) {
-        alert('Erreur lors de la suppression : ' + err.message);
+        showToast('Erreur lors de la suppression : ' + err.message, "error");
     }
 }
 
@@ -674,7 +774,7 @@ const backupManager = {
             await window.api.createBackup(currentServerId);
             await this.load();
         } catch (err) {
-            alert("Erreur lors de la création du backup: " + err.message);
+            showToast("Erreur lors de la création du backup: " + err.message, "error");
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-plus"></i> Créer une sauvegarde';
@@ -683,15 +783,16 @@ const backupManager = {
 
     async restore(fileName) {
         if (!currentServerId) return;
-        if (!confirm(`Êtes-vous sûr de vouloir restaurer "${fileName}" ? Cela écrasera les fichiers actuels du serveur.`)) return;
+        const confirmed = await showConfirm("Restaurer la sauvegarde", `Êtes-vous sûr de vouloir restaurer "${fileName}" ? Cela écrasera les fichiers actuels du serveur.`);
+        if (!confirmed) return;
 
         showStatus("Restauration de la sauvegarde...");
         try {
             await window.api.restoreBackup(currentServerId, fileName);
-            alert("Serveur restauré avec succès !");
+            showToast("Serveur restauré avec succès !", "success");
             // Optional: refresh other tabs too
         } catch (err) {
-            alert("Erreur lors de la restauration: " + err.message);
+            showToast("Erreur lors de la restauration: " + err.message, "error");
         } finally {
             hideStatus();
         }
@@ -699,13 +800,15 @@ const backupManager = {
 
     async delete(fileName) {
         if (!currentServerId) return;
-        if (!confirm(`Supprimer la sauvegarde "${fileName}" ?`)) return;
+        const confirmed = await showConfirm("Supprimer la sauvegarde", `Supprimer la sauvegarde "${fileName}" ?`);
+        if (!confirmed) return;
 
         try {
             await window.api.deleteBackup(currentServerId, fileName);
+            showToast("Sauvegarde supprimée", "success");
             await this.load();
         } catch (err) {
-            alert("Erreur lors de la suppression: " + err.message);
+            showToast("Erreur lors de la suppression: " + err.message, "error");
         }
     }
 };
@@ -729,7 +832,7 @@ const editor = {
             this.textarea.value = content;
             this.modal.style.display = 'flex';
         } catch (err) {
-            alert("Erreur lecture: " + err.message);
+            showToast("Erreur lecture: " + err.message, "error");
         }
     },
 
@@ -743,11 +846,11 @@ const editor = {
         if (!currentServerId || !this.currentFile) return;
         try {
             await window.api.saveServerFile(currentServerId, this.currentFile, this.textarea.value);
-            alert("Fichier enregistré !");
+            showToast("Fichier enregistré !", "success");
             this.close();
             fileManager.load(fileManager.currentPath);
         } catch (err) {
-            alert("Erreur sauvegarde: " + err.message);
+            showToast("Erreur sauvegarde: " + err.message, "error");
         }
     }
 };

@@ -151,3 +151,13 @@ ipcMain.handle('restore-backup', async (event, { id, fileName }) => {
 ipcMain.handle('delete-backup', async (event, { id, fileName }) => {
   return serverManager.deleteBackup(id, fileName);
 });
+
+ipcMain.handle('get-available-versions', async (event, slug) => {
+  const api = require('./src/api');
+  return await api.getAvailableVersions(slug);
+});
+
+ipcMain.handle('get-projects', async () => {
+  const api = require('./src/api');
+  return await api.getProjects();
+});

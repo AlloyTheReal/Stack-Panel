@@ -20,5 +20,7 @@ contextBridge.exposeInMainWorld('api', {
     deleteBackup: (id, fileName) => ipcRenderer.invoke('delete-backup', { id, fileName }),
     onServerLog: (callback) => ipcRenderer.on('server-log', callback),
     onServerStats: (callback) => ipcRenderer.on('server-stats', (event, stats) => callback(stats)),
-    onCreateStatus: (callback) => ipcRenderer.on('create-status', callback)
+    onCreateStatus: (callback) => ipcRenderer.on('create-status', callback),
+    getAvailableVersions: (slug) => ipcRenderer.invoke('get-available-versions', slug),
+    getProjects: () => ipcRenderer.invoke('get-projects')
 });
