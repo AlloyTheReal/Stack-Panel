@@ -6,21 +6,19 @@ Stack Panel est un gestionnaire de serveurs **Minecraft** simple et efficace. G�
 ## 📝 Fonctionnalités
 - Création et gestion rapide et simple et intuitif de serveurs Minecraft
 - Système de backup
+- Plus de 20 loader disponible
 - Interface épuré
 - Gestionnaire de fichier integré
 - Lancement / arrêt en un clic (quand l'app veux bien :O )
-- Support pour Paper, Vanilla, Forge, Fabric, NeoForge
+- Support pour Paper, Vanilla, Forge, Fabric, NeoForge, Vélocity, Purpur, Pufferfish, Folia, Sponge, Spigot, BungeeCord, Waterfall, Quilt, Canvas, Velocity-CTD, Arclight, Mohist, Youer, Magma, DivineMC, Leaf, Leaves, ASPaper, Legacy Fabric, Pluto, LooHP Limbo, NanoLimbo
 - Installation automatique des bonnes versions de Java et des fichier Minecraft
 
-## 🛠️ Prochainement
-- Fonctionnalités avancées prévues dans les prochaines releases
-- Ajout de sources Minecraft
-- Ajout de version Minecraft
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002238" src="https://github.com/user-attachments/assets/57d96351-1553-492b-b338-0b843da35b22" />
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002240" src="https://github.com/user-attachments/assets/9fdcf361-d548-43b8-b652-9d59c50a04d3" />
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002242" src="https://github.com/user-attachments/assets/3b9f31b5-f7f5-4252-90ef-d5095e1dc027" />
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002245" src="https://github.com/user-attachments/assets/c68c19b4-3a4d-4c68-8b83-24f73750cfd6" />
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002252" src="https://github.com/user-attachments/assets/969f0974-5540-49e1-a758-f603766b5d71" />
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002300" src="https://github.com/user-attachments/assets/257deb4a-6eff-499a-8cb9-4ac8e4621aac" />
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002325" src="https://github.com/user-attachments/assets/e6fae784-e062-487e-bc73-139694fff6ab" />
-<img width="1200" height="800" alt="Capture d&#39;écran 2026-03-07 002336" src="https://github.com/user-attachments/assets/1178daae-47a0-4b56-a690-eaf76cf6f203" />
+
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200138" src="https://github.com/user-attachments/assets/79460cb3-3daa-45cc-9ab2-c7fb58c5f080" />
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200135" src="https://github.com/user-attachments/assets/11e1d70c-1a59-490e-b94c-c9f943bec0eb" />
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200127" src="https://github.com/user-attachments/assets/8b0c4067-c4f0-476c-98eb-d0a19d3f3a69" />
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200124" src="https://github.com/user-attachments/assets/5d835603-0f45-4667-b31a-32e356388740" />
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200121" src="https://github.com/user-attachments/assets/d6792b4f-6698-4597-92ed-0eda2776e44b" />
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200116" src="https://github.com/user-attachments/assets/4454fff4-58fc-4b4c-8be1-f52e75732c2a" />
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200106" src="https://github.com/user-attachments/assets/be459e62-56f7-426a-a3e3-2f918f44808f" />
+<img width="1200" height="799" alt="Capture d&#39;écran 2026-03-07 200059" src="https://github.com/user-attachments/assets/6637a8e7-d985-401e-802c-9d02391ee1ec" />
